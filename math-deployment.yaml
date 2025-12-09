@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: math-calculator-deployment
+  labels:
+    app: math-calculator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: math-calculator
+  template:
+    metadata:
+      labels:
+        app: math-calculator
+    spec:
+      containers:
+      - name: calculator-container
+        image: mathcontainer:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        env:
+        - name: LOG_LEVEL 
+          valueFrom:
+            configMapKeyRef:
+              name: math-config 
+              key: LOG_LEVEL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: math-calculator-service
+spec:
+  type: NodePort
+  selector:
+    app: math-calculator
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
