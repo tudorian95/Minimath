@@ -19,6 +19,9 @@ Prerequisites:
 
 ### I) Execute runDeploy.bat script
 This is the recommended way to deploy the app, easy double click option :D
+However, this implies the user having administrator access to the system, which might not always be the case.
+A second option would be to manually execute 'WindowsDeploy.sp1'.
+See the 'notes' section if you encounter any issues.
 
 ### II) Manually building the app
 Select a folder in which you want to download the repository, 'cd' to said folder path and then run these commands in a new Powershell session:
