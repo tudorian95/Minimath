@@ -62,6 +62,14 @@ minikube service math-calculator-service --url
 Prerequisites: 
 - same as for Windows
 
+### I) Execute UbuntuDeploy.sh script
+Easy way. Just use this command and then go in the browser to interact with the app:
+```cmd
+./UbuntuDeploy.sh
+```
+
+### II) Manually building the app
+After login (assuming it's desired to create a new folder in the user's 'home' folder):
 ```cmd
 git clone https://github.com/tudorian95/Minimath.git
 ```
