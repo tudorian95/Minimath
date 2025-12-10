@@ -17,7 +17,7 @@ CD /D "%~dp0"
 ECHO Running Minikube Deployment Script...
 
 :: --- Run the PowerShell script ---
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "deploy.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "WindowsDeploy.ps1"
 
 :: --- Keep the window open after the script finishes ---
 ECHO.
