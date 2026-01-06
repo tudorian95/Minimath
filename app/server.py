@@ -1,12 +1,14 @@
-import os
 import logging
+
 import uvicorn
 
-def main():
-    # Read LOG_LEVEL from env, default to "info"
-    log_level = os.getenv("LOG_LEVEL", "info").lower()
+from app.core.config import get_settings
 
-    print(f"*** server.py starting with LOG_LEVEL={log_level} ***")
+
+def main() -> None:
+    settings = get_settings()
+    log_level = settings.log_level.lower()
+    workers = settings.uvicorn_workers
 
     numeric_level = getattr(logging, log_level.upper(), logging.INFO)
     logging.getLogger().setLevel(numeric_level)
@@ -19,12 +21,14 @@ def main():
     access_log_enabled = numeric_level < logging.ERROR
 
     uvicorn.run(
-        "main:app",
+        "app.main:app",
         host="0.0.0.0",
         port=8000,
         log_level=log_level,
         access_log=access_log_enabled,
+        workers=workers,
     )
+
 
 if __name__ == "__main__":
     main()

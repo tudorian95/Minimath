@@ -4,8 +4,9 @@
 DEPLOYMENT_FILE="./math-deployment.yaml"
 CONFIG_FILE="./math-config.yaml"
 CONTAINER_IMAGE="mathcontainer:latest"
-DEPLOYMENT_NAME="math-calculator-deployment"
+DEPLOYMENT_NAME="math-api"
 SERVICE_NAME="math-calculator-service"
+MIGRATION_JOB_FILE="./math-migrate-job.yaml"
 TIMEOUT="120s"
 
 # Function for error handling
@@ -48,11 +49,17 @@ echo -e "\n5. Waiting for deployment '${DEPLOYMENT_NAME}' to be ready (up to ${T
 kubectl rollout status deployment/"${DEPLOYMENT_NAME}" --timeout="${TIMEOUT}" || handle_error "Deployment rollout failed or timed out."
 
 # --- 6. Verify Pod Status ---
-echo -e "\n6. Verifying Pod status (should show 2 Running pods):"
+echo -e "\n6. Verifying Pod status (should show Running pods):"
 kubectl get pods
 
-# --- 7. Get Service URL and Open Browser ---
-echo -e "\n7. Retrieving the service URL for ${SERVICE_NAME}..."
+# --- 7. Run database migrations ---
+echo -e "\n7. Running database migrations..."
+kubectl delete job math-migrate --ignore-not-found=true || handle_error "Failed to delete migration job."
+kubectl apply -f "${MIGRATION_JOB_FILE}" || handle_error "Migration job creation failed."
+kubectl wait --for=condition=complete job/math-migrate --timeout="${TIMEOUT}" || handle_error "Migration job failed."
+
+# --- 8. Get Service URL and Open Browser ---
+echo -e "\n8. Retrieving the service URL for ${SERVICE_NAME}..."
 
 # Get the Minikube IP
 MINIKUBE_IP=$(minikube ip) || handle_error "Failed to get Minikube IP."
@@ -64,7 +71,7 @@ if [ -z "${NODE_PORT}" ]; then
     handle_error "Failed to get NodePort for service '${SERVICE_NAME}'. Is the service type NodePort?"
 fi
 
-FINAL_URL="http://${MINIKUBE_IP}:${NODE_PORT}/ui"
+FINAL_URL="http://${MINIKUBE_IP}:${NODE_PORT}/docs"
 
 echo "Minikube IP: ${MINIKUBE_IP}"
 echo "NodePort: ${NODE_PORT}"
@@ -74,5 +81,5 @@ echo "Opening browser to: ${FINAL_URL}..."
 # Use xdg-open to launch the default browser on most Linux desktop environments
 xdg-open "${FINAL_URL}" &
 
-echo -e "\nDeployment complete. Check your browser for the MathOps UI."
+echo -e "\nDeployment complete. Check your browser for the MathOps docs."
 read -p "Press Enter to close the window..."

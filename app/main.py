@@ -1,18 +1,16 @@
-import uvicorn
 from fastapi import FastAPI
-from api import router
-from models import Base
-from db import engine
-from workers import worker
-import asyncio
 
-app = FastAPI(title="MathOps Microservice")
-app.include_router(router)
-
-Base.metadata.create_all(bind=engine)
+from app.api import router
+from app.core.config import get_settings
+from app.core.exceptions import add_exception_handlers
 
 
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(worker())
+def create_app() -> FastAPI:
+    settings = get_settings()
+    app = FastAPI(title=settings.app_name)
+    add_exception_handlers(app)
+    app.include_router(router)
+    return app
 
+
+app = create_app()

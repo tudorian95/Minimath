@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: math-migrate
+  labels:
+    app: math-migrate
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: math-migrate
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: migrate
+        image: mathcontainer:latest
+        imagePullPolicy: Never
+        command: ["alembic", "upgrade", "head"]
+        envFrom:
+        - configMapRef:
+            name: math-config
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          allowPrivilegeEscalation: false

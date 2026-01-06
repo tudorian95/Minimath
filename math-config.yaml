@@ -6,3 +6,12 @@ metadata:
     app: math-calculator
 data:
   LOG_LEVEL: "debug"
+  UVICORN_WORKERS: "4"
+  DATABASE_URL: "postgresql+psycopg2://mathops:mathops@math-postgres:5432/mathops"
+  CELERY_BROKER_URL: "amqp://mathops:mathops@math-rabbitmq:5672//"
+  CELERY_RESULT_BACKEND: "rpc://"
+  POSTGRES_DB: "mathops"
+  POSTGRES_USER: "mathops"
+  POSTGRES_PASSWORD: "mathops"
+  RABBITMQ_DEFAULT_USER: "mathops"
+  RABBITMQ_DEFAULT_PASS: "mathops"

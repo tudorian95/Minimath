@@ -3,8 +3,9 @@
 # --- Configuration ---
 $DeploymentFile = ".\math-deployment.yaml"
 $ConfigFile = ".\math-config.yaml"
+$MigrationJobFile = ".\math-migrate-job.yaml"
 $ContainerImage = "mathcontainer:latest"
-$DeploymentName = "math-calculator-deployment" # Name of your Deployment in the YAML
+$DeploymentName = "math-api" # Name of your Deployment in the YAML
 $ServiceName = "math-calculator-service" # Name of your Service in the YAML
 
 # --- Docker Check and Build ---
@@ -71,8 +72,22 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "`n6. Verifying Pod status (should show 2 Running pods):"
 kubectl get pods
 
+# --- Run database migrations ---
+Write-Host "`n7. Running database migrations..."
+kubectl delete job math-migrate --ignore-not-found
+kubectl apply -f $MigrationJobFile
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Migration job creation failed. Exiting."
+    exit 1
+}
+kubectl wait --for=condition=complete job/math-migrate --timeout="120s"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Migration job failed. Exiting."
+    exit 1
+}
+
 # --- Get Service URL and Open Browser (NEW LOGIC) ---
-Write-Host "`n7. Retrieving the service URL for $($ServiceName)..."
+Write-Host "`n8. Retrieving the service URL for $($ServiceName)..."
 
 # Use 'minikube service list' and filter for the ServiceName
 $ServiceInfo = minikube service list | Select-String $ServiceName
@@ -100,7 +115,7 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrEmpty($NodePort)) {
 }
 
 $ServiceUrl = "http://$($MinikubeIp):$($NodePort)"
-$FinalUrl = "$ServiceUrl/ui"
+$FinalUrl = "$ServiceUrl/docs"
 
 Write-Host "Minikube IP: $($MinikubeIp)"
 Write-Host "NodePort: $($NodePort)"
@@ -110,4 +125,4 @@ Write-Host "Opening browser to: $($FinalUrl)..."
 # Use Start-Process to open the URL in the default web browser on Windows
 Start-Process $FinalUrl
 
-Write-Host "`nDeployment complete. Check your browser for the MathOps UI."
+Write-Host "`nDeployment complete. Check your browser for the MathOps docs."
