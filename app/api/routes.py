@@ -2,18 +2,37 @@ import logging
 import uuid
 
 from celery.exceptions import CeleryError
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.exceptions import RequestValidationError
 from kombu.exceptions import KombuError
+from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models import MathOperation
-from app.schemas import ErrorResponse, MathRequest, MathResult, ValidationErrorResponse
+from app.schemas import (
+    ErrorResponse,
+    MathRequest,
+    MathResult,
+    Operation,
+    ValidationErrorResponse,
+)
 from app.tasks.math_tasks import perform_operation_task
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def parse_math_request(
+    op: Operation = Query(..., description="Operation to perform"),
+    a: int = Query(..., description="Primary operand"),
+    b: int | None = Query(None, description="Secondary operand (power only)"),
+) -> MathRequest:
+    try:
+        return MathRequest(op=op, a=a, b=b)
+    except ValidationError as exc:
+        raise RequestValidationError(exc.errors()) from exc
 
 
 @router.post(
@@ -29,7 +48,10 @@ logger = logging.getLogger(__name__)
         503: {"model": ErrorResponse, "description": "Queue unavailable"},
     },
 )
-async def calculate(req: MathRequest, db: Session = Depends(get_db)) -> str:
+async def calculate(
+    req: MathRequest = Depends(parse_math_request),
+    db: Session = Depends(get_db),
+) -> str:
     job_id = str(uuid.uuid4())
 
     db_entry = MathOperation(id=job_id, op=req.op.value, a=req.a, b=req.b)
